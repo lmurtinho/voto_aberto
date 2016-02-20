@@ -1,0 +1,150 @@
+---
+title: "Voto Aberto"
+author: "Lucas Murtinho"
+date: "12 de janeiro de 2016"
+output: 
+  html_document:
+    toc: yes
+---
+
+# 0. Limpando o ambiente global e definindo o diretório de trabalho
+
+```{r}
+rm(list=ls())
+setwd("C:/Users/zsj7/Documents/Outros/machine_learning/voto_aberto")
+options(stringsAsFactors=FALSE)
+```
+
+```{r meses}
+nomes_meses = c("Janeiro", "Fevereiro", "Março", "Abril", 
+                "Maio", "Junho", "Julho", "Agosto",
+                "Setembro", "Outubro", "Novembro", "Dezembro")
+```
+
+
+```{r funcao_leitura_links}
+
+# função para ler o site e extrair os links com datas
+# e as linhas com atas
+
+ler_links = function(site, ano=NA) {
+  
+  # ler o site inteiro
+  site_inteiro = readLines(site)
+  
+  # pegar todas as linhas do site com links
+  links_site = site_inteiro[grep("href", site_inteiro)]
+  
+  
+  # pegar links para datas:
+  # pegar todas as linhas que expandem a tabela de datas
+  linhas = links_site[grep("Show details for", links_site)]
+  
+  # descartar links para atas
+  linhas_datas = linhas[!grepl("Show details for Ata", linhas)]
+  
+  # pegar links para atas:
+  linhas_atas = links_site[grepl("ocorrida em", links_site)]
+  
+  links_datas = ler_links_datas(linhas_datas, ano)
+
+  return(list(datas=links_datas, atas=linhas_atas))
+}
+
+# função para ler os links de datas
+
+ler_links_datas = function(linhas_datas, ano) {
+  
+  # limpar a string "Março"
+  linhas_datas = gsub("MarÃ§o", "Março", linhas_datas)
+  
+  # pegar as referências de links (com as aspas por causa da regex)
+  entre_aspas = gsub(".*href=(\".*?\").*", "\\1", linhas_datas)
+  
+  # limpar as aspas e os "amp;"
+  sem_aspas = substring(entre_aspas, 2, nchar(entre_aspas)-1)
+  sem_amps = gsub("amp;", "", sem_aspas)
+  
+  # colar a raiz aos links sem aspas para criar links completos
+  links = paste0("http://mail.camara.rj.gov.br", sem_amps)
+  
+  # tirar os anos ou meses de cada link
+  ano_mes = gsub(".*Show details for ([[:digit:]]{4}|[[:alpha:]]{4,9})\".*",
+                 "\\1", 
+                 linhas_datas)
+  
+  if (is.na(ano)) {
+    anos = ano_mes
+    meses = rep(NA, length(links))
+  } else {
+    anos = ano
+    meses = ano_mes
+  }
+  
+  return(data.frame(links, anos, meses))
+}
+
+```
+
+# 1. Baixando as atas
+
+Primeiro passo: baixar os arquivos com as atas das sessões da Câmara Municipal.
+
+O código abaixo retira do site com a lista das atas os links para as atas em si.
+
+```{r}
+
+# iniciar no site colapsado (com todos os anos)
+site_original = "http://mail.camara.rj.gov.br/APL/Legislativos/atas.nsf/AtasInt?OpenForm&Start=1&Count=100&Collapse=1"
+
+visitar = ler_links(site_original)$datas
+
+visitados = data.frame(links=character(), anos=character(), meses=character())
+
+atas = c()
+
+while (nrow(visitar)) {
+  
+  # pegar próximo link da lista
+  link_atual = visitar[1,]
+
+  # tirar link da lista a visitar e acrescentar na lista de visitados
+  visitados = rbind(visitados, visitar[1,])
+  visitar = visitar[-1,]
+  
+  # acrescentar links à lista de visitar
+  novo_resultado = ler_links(link_atual$link, link_atual$ano)
+  novos_links = novo_resultado$datas
+  novas_atas = novo_resultado$atas
+  
+  # ficar apenas com novos links que não estão em a visitar 
+  # ou em visitados
+  todos_links = c(visitar$links, visitados$links)
+  novos_links = novos_links[!novos_links$links %in% todos_links,]
+  visitar = rbind(visitar, novos_links)
+  
+  # atualizar atas
+  atas = unique(c(atas, novas_atas))
+}
+
+links_atas = paste0("http://mail.camara.rj.gov.br",
+                    gsub(".*href=\"(.*?\").*", "\\1", atas))
+links_atas = substring(links_atas, 1, nchar(links_atas)-1)
+datas_atas = gsub(".*ocorrida em ([[:digit:]]{2}/[[:digit:]]{2}/[[:digit:]]{4}).*", 
+                  "\\1", atas)
+atas = data.frame(link=links_atas, data=datas_atas)
+
+numeros = gsub("/", "", atas[,2])
+atas$arquivo = paste0(substring(numeros, 5, 8),
+                      substring(numeros, 3, 4),
+                      substring(numeros, 1, 2),
+                      ".txt")
+
+for (i in 1:nrow(atas)) {
+  if (!atas[i, "arquivo"] %in% dir(".")) {
+    write(readLines(atas[i,"link"]), file=atas[i,"arquivo"])
+  }
+}
+
+```
+

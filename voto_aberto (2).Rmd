@@ -1,0 +1,40 @@
+---
+title: "Voto Aberto"
+author: "Lucas Murtinho"
+date: "12 de janeiro de 2016"
+output: 
+  html_document:
+    toc: yes
+---
+
+# 0. Limpando o ambiente global e definindo o diretório de trabalho
+
+```{r}
+rm(list=ls())
+setwd("C:/Users/zsj7/Documents/Outros/machine_learning/voto_aberto")
+```
+
+
+# 1. Baixando as atas
+
+Primeiro passo: baixar os arquivos com as atas das sessões da Câmara Municipal.
+
+O código abaixo retira do site com a lista das atas os links para as atas em si.
+
+
+```{r}
+site_original = "http://mail.camara.rj.gov.br/APL/Legislativos/atas.nsf/AtasInt?OpenForm"
+
+pg = readLines(site_original)
+
+links = pg[grep("href", pg)]
+links = gsub('.*href=\"', '', links)
+links = gsub('OpenDocument.*', 'OpenDocument', links)
+
+atas = grepl("OpenDocument", links)
+atas_links = paste0("http://mail.camara.rj.gov.br/",
+                    links[atas])
+outros_links = links[-atas]
+
+```
+
