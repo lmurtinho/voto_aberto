@@ -34,9 +34,9 @@ def filtro_string(atas, regex):
             if re.findall(regex, atas[nome])}
 
 def pegar_votantes(votos):
-    sessoes_com_voto = [re.findall(r'(?:votou|votaram) (.*?) o[s]? (?:Senhor|Senhores) (?:Vereador|Vereadores) (.*?) \((.*?)\)', 
-                        votos_2015[ata]) 
-               for ata in sorted(list(votos))]
+    sessoes_com_voto = [re.findall(r'(?:votou|votaram) (.*?) o[s]? (?:senhor|senhores) (?:vereador|vereadores) ([^;\.\(\d]+[^\W\d_])', 
+                        votos_2015[ata])
+                        for ata in sorted(list(votos))]
     votantes = []
     for sessao in sessoes_com_voto:
         for voto in sessao:
@@ -64,6 +64,10 @@ votos_2015 = filtro_string(atas_2015, r'votaram|votação')
 #votaram2 = [re.findall(voto_regex, votos_2015[ata])
 #           for ata in sorted(list(votos_2015))]
 
+# regex antiga: r'(?:votou|votaram) (.*?) o[s]? (?:Senhor|Senhores) (?:Vereador|Vereadores) (.*?) \((.*?)\)'
+
 votantes_por_voto = pegar_votantes(votos_2015)
 vereadores = set(itertools.chain(*votantes_por_voto))
-
+vereadores = {vereador.strip() 
+              for vereador in vereadores
+              if len(vereador)>2}

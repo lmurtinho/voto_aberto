@@ -50,15 +50,55 @@ def texto(sopas):
     Retorna o texto das sopas (BeautifulSoup)
     no dicionário sopas.
     """
-    return {sopa: sopas[sopa].get_text() for sopa in sopas}
+    return {sopa: sopas[sopa].get_text().lower() for sopa in sopas}
 
 def limpar_textos(textos):
     """
     Retira dos textos no dicionário "textos" todos os
-    caracteres "estranhos".
+    caracteres "estranhos" e pontos em Dr. ou S.O.S.
     """
     textos = {texto: re.sub(r'[^ .,;:\-\'\"\(\)\w]', r'', textos[texto])
               for texto in textos}
+    textos = {texto: re.sub(r'césar maia', r'cesar maia', textos[texto])
+              for texto in textos}
+    textos = {texto: re.sub(r'dr\.', r'dr', textos[texto])
+              for texto in textos}
+    textos = {texto: re.sub(r'drjoão', r'dr joão', textos[texto])
+              for texto in textos}
+    textos = {texto: re.sub(r'ivanir de melo', 
+                            r'ivanir de mello', textos[texto])
+              for texto in textos}
+    textos = {texto: re.sub(r's\.o\.s\.', 'sos', textos[texto])
+              for texto in textos}
+    textos = {texto: re.sub(r's\.o\.s', 'sos', textos[texto])
+              for texto in textos}
+    textos = {texto: re.sub(r'brizola neto', 'brizola', textos[texto])
+              for texto in textos}
+    textos = {texto: re.sub(r'marcelino dalmeida', 
+                            'marcelino d\'almeida', textos[texto])
+              for texto in textos}
+    textos = {texto: re.sub(r'aloísio', 'aloisio', textos[texto])
+              for texto in textos}
+    textos = {texto: re.sub(r'átila a.', 'átila a', textos[texto])
+              for texto in textos}
+    textos = {texto: re.sub(r's. ferraz', 's ferraz', textos[texto])
+              for texto in textos}
+    textos = {texto: re.sub(r'prof. célio', 'prof célio', textos[texto])
+              for texto in textos}
+    textos = {texto: re.sub(r'prof. uoston', 'prof uoston', textos[texto])
+              for texto in textos}
+    textos = {texto: re.sub(r'k. ribeiro', 'k ribeiro', textos[texto])
+              for texto in textos} 
+    textos = {texto: re.sub(r'zico trinta e quatro', 
+                            'zico (trinta e quatro)', textos[texto])
+              for texto in textos}
+    textos = {texto: re.sub(r'zico vinte e três', 
+                            'zico (vinte e três)', textos[texto])
+              for texto in textos}
+    textos = {texto: re.sub(r'marcelino d\'almeida marcelo arar',
+                            'marcelino d\'almeida, marcelo arar', 
+                            textos[texto])
+              for texto in textos}               
     return {texto: re.sub(r'  +', r' ', textos[texto])
             for texto in textos}
 
